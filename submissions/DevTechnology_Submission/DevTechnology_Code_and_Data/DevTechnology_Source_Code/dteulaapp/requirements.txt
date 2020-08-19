@@ -1,0 +1,15 @@
+setuptools
+coverage
+flask
+PyPDF2
+python-docx
+numpy
+pandas
+nltk
+scipy
+scikit-learn
+torch
+torchvision
+transformers
+tensorboardx
+simpletransformers

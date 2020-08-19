@@ -1,0 +1,13 @@
+setuptools
+coverage
+numpy
+pandas
+nltk
+scipy
+scikit-learn
+torch
+torchvision
+transformers
+tensorboardx
+simpletransformers
+matplotlib

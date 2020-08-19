@@ -1,0 +1,32 @@
+# Byte-compiled
+*.pyc
+*.pyo
+*.pyd
+
+# Scripts
+*.sh
+*.bat
+
+# Local config
+*.ini
+
+# IDE
+.spyproject/
+.spyderproject/
+.idea/
+
+# Test results
+.coverage
+
+# Virtual Environment
+dteulamlenv/
+
+# Training artifacts
+outputs/
+cache_dir/
+runs/
+
+# Build artifacts
+dteulaml.egg-info/
+build/
+dist/

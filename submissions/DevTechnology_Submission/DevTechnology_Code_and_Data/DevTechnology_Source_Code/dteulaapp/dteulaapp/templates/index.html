@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dev Technology EULA Clause Analysis</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}" >
+  <link rel="icon" href="data:,">
+  <script>
+    function getBase64(file) 
+    {
+      return new Promise( function(resolve, reject){
+      var reader = new FileReader();
+      
+      try 
+      {
+        reader.readAsDataURL(file);
+      }
+      catch(err) 
+      {
+        document.getElementById('fileup').innerText = "Please select a file before submitting";
+        $('#fileup').css("pointer-events", "auto"); 
+        document.body.classList.remove('waiting');  
+      }
+
+      reader.onload = function () {
+        resolve (reader.result);
+                                   };
+      reader.onerror = function (error) {
+        reject('Error: '+ error);
+                                        };
+                                                   });
+     }
+    function cirtype(answer) 
+    {
+      return new Promise( function(resolve, reject){
+        if (answer === 'Unacceptable')
+        {
+          resolve('cirunaccept');
+        }
+        else if(answer === 'Acceptable')
+        {
+          resolve('ciraccept');
+
+        }
+        else if(answer === 'Not Sure')
+        {
+          resolve('cirneither');
+        }
+        else{
+          resolve('');
+        }
+    
+                                                   });
+     }
+
+    async function createTable(result, tabval) 
+    {
+      $("#resultsd").html("");
+      var rtable = $('<table id="eulatbl" style="border: 1px solid black;"/>');
+      var thead = $("<thead/>");
+      var hrow = $("<tr/>");
+      var count = 0;
+      hrow.append($("<th class = parseClause/>").html("Clause"));
+      hrow.append($("<th class = status/>").html("Acceptable?"));
+      hrow.append($("<th class = feedback/>").html("Feedback"));
+      hrow.append($("<th class = closest/>").html("Closest Acceptable Match"));
+      hrow.append($("<th class = closestUn/>").html("Closest Unacceptable Match"));
+      thead.append(hrow);
+      rtable.append(thead);
+      if (tabval)
+      {
+        for (var cRow = 0; cRow < result.length; cRow++) {
+                count++;
+                var curRow = $("<tr/>");
+                curRow.append($("<td/>").html(result[cRow]['origclause']));
+                var score = Math.round((result[cRow]['score']*100)) + '%';
+                var ctype = await cirtype(result[cRow]['classification']);
+                curRow.append($("<td/>").html(result[cRow]['classification']+'<br/>'+'<div class="container"><div id="circle" class="circle '+ctype+'"><span class="prec 270" id="prec">'+score+'</span></div></div>'));
+                curRow.append($("<td/>").html('<div class="some-class"><input type="radio" class="radio" name="'+cRow.toString() + '" id="feedbackChoice1_' + cRow.toString() + '" value="acceptable"><label for="feedbackChoice1_' + cRow.toString() + '">Acceptable</label><br><input type="radio" class="radio"  name="'+cRow.toString() + '" id="feedbackChoice2_' + cRow.toString() + '" value="unacceptable"><label for="feedbackChoice2_' + cRow.toString() + '">Unacceptable</label><br><input type="radio" class="radio"  name="'+cRow.toString() + '" id="feedbackChoice3_' + cRow.toString() + '" value="unsure"><label for="feedbackChoice3_' + cRow.toString() + '">Not Sure</label><br><input type="radio" class="radio" name="'+cRow.toString() + '" id="feedbackChoice4_' + cRow.toString() + '" value="notclause"><label for="feedbackChoice4_' + cRow.toString() + '">Not a Clause</label><br></div>'));
+                
+                curRow.append($("<td/>").html(result[cRow]['accclause']));
+                curRow.append($("<td/>").html(result[cRow]['unaccclause']));
+                rtable.append(curRow);
+              }
+      }
+      $("#resultsd").append(rtable);
+
+      $(".radio").change(function()
+      {
+        table = document.getElementById("eulatbl");
+        if (this.checked) {
+            var clause = table.rows[parseInt(this.name)+1].cells[0].innerHTML;
+            var acceptable = table.rows[parseInt(this.name)+1].cells[1].innerHTML;
+            $.ajax(
+                  {
+                    url: "/feedback",
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify({clausetext: clause, acceptable: acceptable, feedback: this.value}),
+                    success: function(result, status) 
+                    {
+                      console.log(result);
+                        
+                    }
+                  });
+        }
+      });
+
+    }
+
+    function createPost(data,dtype,wfield)
+    {
+      $.ajax(
+        {
+          url: "/clause",
+          type: "POST",
+          contentType: "application/json; charset=utf-8",
+          dataType: "json",
+          data: JSON.stringify({clausetext: data, mtype: dtype}),
+          success: function(result, status) 
+          {
+            createTable(result,true)  
+            document.body.classList.remove('waiting');  
+            $(wfield).css("pointer-events", "auto"); 
+            if (wfield === '#doitb'){
+              document.getElementById('doitb').innerText = "Submit Clause Text";
+            }
+            else
+            {
+              document.getElementById('fileup').innerText = "Submit EULA File";
+            }
+            
+              
+           }
+        });
+      
+    }
+
+  </script>
+  <script>
+    $(document).ready(function() {
+      $("#doitb").click(function(e) {
+    
+        e.preventDefault();
+        document.body.classList.add('waiting');
+        $("#doitb").css("pointer-events", "none");
+
+        
+        var qstr = "";
+        qstr = $("#queryta").val();
+        if ( qstr === "")
+        {
+          document.getElementById('doitb').innerText = "Please input text before submitting";
+          $('#doitb').css("pointer-events", "auto");
+          document.body.classList.remove('waiting');  
+
+        }
+        else
+        {
+          createTable({}, false);
+          document.getElementById('doitb').innerText = "Analyzing... Please wait a moment";
+          createPost(qstr, "text", "#doitb");
+          
+        }
+        
+      });
+    });
+  </script>
+
+  <script>
+    $(document).ready(function() {
+      $("#fileup").click(async function(e) {
+
+        e.preventDefault();
+        document.body.classList.add('waiting');
+        $("#fileup").css("pointer-events", "none");
+
+        document.getElementById("queryta").value = "";
+        createTable({}, false);
+        document.getElementById('fileup').innerText = "Analyzing... Please wait a moment";
+
+        var fileInput = document.getElementById("eula-file");
+        var files = fileInput.files;
+
+        basech = await getBase64(files[0]);
+
+        var encoding = basech.split(',');
+        var dtype = encoding[0].split('/')[1].split(';')[0];
+
+        createPost(encoding[1], dtype,"#fileup");
+
+      });
+    });
+  </script>
+
+
+</head>
+<body>
+
+  <div class="devtitle">
+    <a href="https://devtechnology.com/">
+      <img id="devlogo" src="static/img/DevLogo.png" alt="Foo Co.: Where everyone can fizz the buzz" > 
+    </a>
+    EULA Clause Analysis
+  </div>
+
+  <div id="introtext">
+    <p style="text-align: center; font-weight: 550; margin-right: 8%; margin-bottom: 0.5%;"> Welcome to EULACheck, Dev Technology's End User License Agreement (EULA) analysis app!
+    </p>
+      <span style="font-weight: normal;font-size: small;">You may upload a EULA in Word (.docx) or PDF (.pdf) format, or paste EULA content directly into the text box from your clipboard.
+      <br/><br/>We will take a look at each clause, and determine if the Federal Government is likely to object to the language there.
+      <br/><br/>We will also show you clauses that closely match yours which are known to be unacceptable and/or acceptable to the Federal Government.
+        <br/><br/><span style="font-weight: bold;">All content on this site is informational - it should not be construed as legal advice.</span>
+      <br/><br/>Finally, you can provide your feedback by telling us if our analysis was correct or not.</span>
+      <br/><br/><p style="font-weight: bold;font-size: small;">*The following application works best on a Chrome Browser</p>
+    
+  </div>
+
+  <div>
+    <div class="eula">
+      <input id="eula-file" type="file" accept=".doc, .docx,.pdf" />
+    </div>
+    <a id="fileup" class="myButton">Submit EULA File</a>
+    <h4 style="margin-left: 47%;margin-top: 1%; color:#666666;">OR</h4>
+    <div class="eula"> 
+      <textarea style="border-radius: 10px;padding-left: 6px;padding-top: 3px;" placeholder="Paste or type EULA clauses here." name="query" id="queryta" rows="15" cols=100"></textarea>
+    </div>
+    <a id="doitb" class="myButton">Submit Clause Text</a>
+
+  </div>
+
+  <br/>
+  <hr/>
+  <br/>
+  <div id="resultsd"></div>
+  <div class="copy-right-text">
+    <!-- FOOTER COPYRIGHT TEXT -->
+    <p> Copyright © 2020 Dev Technology Group All Rights Reserved.</p>
+  </div>
+</body>
+</html>
